@@ -1,0 +1,39 @@
+---
+- name: Wait shard STARTED
+  ansible.builtin.uri:
+    url: "http://{{ es_master }}:9200/_cat/shards/{{ shard_index }}?format=json"
+    method: GET
+    user: "{{ es_username }}"
+    password: "{{ es_password }}"
+    force_basic_auth: true
+    return_content: true
+  register: wait_result
+  retries: 10
+  delay: 2
+
+  until: >
+    (
+      wait_result.json
+      | selectattr("shard", "equalto", shard_id | string)
+      | selectattr("prirep", "equalto",
+          'p' if shard_type == 'PRIMARY' else 'r'
+        )
+      | selectattr("state", "equalto", "STARTED")
+      | list
+      | length
+    ) > 0
+
+- name: Update state
+  ansible.builtin.set_fact:
+    shard_state: >-
+      {{
+        (
+          wait_result.json
+          | selectattr("shard", "equalto", shard_id | string)
+          | selectattr("prirep", "equalto",
+              'p' if shard_type == 'PRIMARY' else 'r'
+            )
+          | selectattr("state", "equalto", "STARTED")
+          | first
+        ).state
+      }}
