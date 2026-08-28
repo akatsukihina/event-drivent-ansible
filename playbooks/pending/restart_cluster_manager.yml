@@ -1,0 +1,10 @@
+---
+- name: Restart Cluster Manager service
+  become: true
+
+  systemd:
+    name: "{{ es_service_name }}"
+    state: restarted
+
+- pause:
+    seconds: 20
