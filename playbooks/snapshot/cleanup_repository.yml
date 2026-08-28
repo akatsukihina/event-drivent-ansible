@@ -1,0 +1,12 @@
+---
+- name: Cleanup snapshot repository
+  uri:
+    url: "http://{{ es_master }}:9200/_snapshot/{{ snapshot_repository }}/_cleanup"
+    method: POST
+    user: "{{ es.username }}"
+    password: "{{ es.password }}"
+    force_basic_auth: true
+    status_code: 200
+
+- debug:
+    msg: "Repository cleanup completed."
