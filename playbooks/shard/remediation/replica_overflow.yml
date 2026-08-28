@@ -1,0 +1,17 @@
+---
+- name: Calculate replicas
+  set_fact:
+    replica_count: "{{ node_count|int -1 }}"
+
+- name: Update replicas
+  uri:
+    url: "http://{{ es_master }}:9200/*/_settings"
+    method: PUT
+    user: "{{ es_username }}"
+    password: "{{ es_password }}"
+    force_basic_auth: true
+    return_content: true
+    body_format: json
+    body:
+      index:
+        number_of_replicas: "{{ replica_count }}"
