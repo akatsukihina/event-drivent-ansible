@@ -1,0 +1,24 @@
+---
+- name: Restart Elasticsearch/OpenSearch service
+  become: true
+
+  systemd:
+    name: "{{ es_service_name }}"
+    state: restarted
+    daemon_reload: true
+
+- name: Wait API
+  uri:
+    url: "http://{{ es_master }}:9200"
+    method: GET
+    user: "{{ es.username }}"
+    password: "{{ es.password }}"
+    force_basic_auth: true
+    status_code: 200
+
+  register: api
+
+  retries: 30
+  delay: 10
+
+  until: api.status == 200
