@@ -1,0 +1,40 @@
+---
+- name: Replica reroute
+  uri:
+    url: "http://{{ es_master }}:9200/_cluster/reroute"
+    method: POST
+    user: "{{ es_username }}"
+    password: "{{ es_password }}"
+    force_basic_auth: true
+    return_content: true
+
+- import_tasks: wait_initializing.yml
+
+- import_tasks: restart_cluster.yml
+  when: shard_state!="STARTED"
+
+- name: replicas=0
+  uri:
+    url: "http://{{ es_master }}:9200/{{ parameters.index }}/_settings"
+    method: PUT
+    user: "{{ es_username }}"
+    password: "{{ es_password }}"
+    force_basic_auth: true
+    return_content: true
+    body:
+      number_of_replicas: 0
+    body_format: json
+  when: shard_state!="STARTED"
+
+- name: Restore replicas
+  uri:
+    url: "http://{{ es_master }}:9200/{{ parameters.index }}/_settings"
+    method: PUT
+    user: "{{ es_username }}"
+    password: "{{ es_password }}"
+    force_basic_auth: true
+    return_content: true
+    body:
+      number_of_replicas: "{{ parameters.replica }}"
+    body_format: json
+  when: shard_state!="STARTED"
