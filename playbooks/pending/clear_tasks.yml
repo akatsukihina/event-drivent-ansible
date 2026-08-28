@@ -1,0 +1,17 @@
+---
+- name: Update cluster settings to trigger cluster state update
+  uri:
+    url: "http://{{ es_master }}:9200/_cluster/settings"
+    method: PUT
+    user: "{{ es.username }}"
+    password: "{{ es.password }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      transient:
+        cluster.routing.allocation.enable: "all"
+    status_code: 200
+
+- name: Display result
+  debug:
+    msg: "Cluster state update submitted."
