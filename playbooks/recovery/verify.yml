@@ -1,0 +1,22 @@
+---
+- name: Get recovery status
+  uri:
+    url: "http://{{ es_master }}:9200/_cat/recovery?format=json"
+    method: GET
+    user: "{{ es.username }}"
+    password: "{{ es.password }}"
+    force_basic_auth: true
+    return_content: true
+    status_code: 200
+  register: recovery_result
+
+- name: Count active recoveries
+  set_fact:
+    active_recoveries: "{{ recovery_result.json | length }}"
+
+- name: Verify recovery threshold
+  assert:
+    that:
+      - active_recoveries | int <= recovery_threshold
+    fail_msg: "Recovery vẫn còn {{ active_recoveries }} shard."
+    success_msg: "Recovery đã hoàn tất hoặc ở mức chấp nhận được."
