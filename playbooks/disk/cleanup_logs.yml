@@ -1,0 +1,22 @@
+---
+- name: Find old log files
+  become: true
+  find:
+    paths:
+      - "{{ es_log_path }}"
+    age: 7d
+    recurse: yes
+    file_type: file
+  register: old_logs
+
+- name: Remove old log files
+  become: true
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ old_logs.files }}"
+  when: old_logs.matched > 0
+
+- name: Show cleanup result
+  debug:
+    msg: "Removed {{ old_logs.matched }} log files."
