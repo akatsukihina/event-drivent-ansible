@@ -1,0 +1,16 @@
+---
+- name: Reduce recovery bandwidth
+  uri:
+    url: "http://{{ es_master }}:9200/_cluster/settings"
+    method: PUT
+    user: "{{ es.username }}"
+    password: "{{ es.password }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      transient:
+        indices.recovery.max_bytes_per_sec: "{{ recovery_bandwidth }}"
+    status_code: 200
+
+- debug:
+    msg: "Recovery bandwidth limited to {{ recovery_bandwidth }}"
