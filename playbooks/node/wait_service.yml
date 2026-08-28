@@ -1,0 +1,12 @@
+---
+- name: Wait until service is active
+  become: true
+  shell: |
+    systemctl is-active elasticsearch
+  register: service_status
+  retries: 30
+  delay: 5
+  until: service_status.stdout == "active"
+
+- debug:
+    msg: "Service is active."
