@@ -1,0 +1,15 @@
+---
+- name: Delete failed snapshot
+  uri:
+    url: "http://{{ es_master }}:9200/_snapshot/{{ snapshot_repository }}/{{ snapshot_name }}"
+    method: DELETE
+    user: "{{ es.username }}"
+    password: "{{ es.password }}"
+    force_basic_auth: true
+    status_code:
+      - 200
+      - 202
+      - 404
+
+- debug:
+    msg: "Failed snapshot removed."
