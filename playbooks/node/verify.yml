@@ -1,0 +1,32 @@
+---
+- name: Verify service
+  become: true
+  service_facts:
+
+- assert:
+    that:
+      - ansible_facts.services[es_service_name + '.service'].state == "running"
+    fail_msg: "Service chua chay."
+
+- name: Verify API
+  uri:
+    url: "http://{{ inventory_hostname }}:9200"
+    method: GET
+    status_code: 200
+    user: "{{ es_username }}"
+    password: "{{ es_password }}"
+    force_basic_auth: true
+
+- name: Verify node in cluster
+  uri:
+    url: "http://{{ es_master }}:9200/_cat/nodes?h=name"
+    return_content: true
+    user: "{{ es_username }}"
+    password: "{{ es_password }}"
+    force_basic_auth: true
+  register: cluster_nodes
+
+- assert:
+    that:
+      - inventory_hostname in cluster_nodes.content
+    fail_msg: "Node chua tham gia cluster."
