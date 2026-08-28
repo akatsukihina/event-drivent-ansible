@@ -1,0 +1,4 @@
+---
+- name: Rollback notification
+  debug:
+    msg: "Remediation failed. Manual intervention required."
