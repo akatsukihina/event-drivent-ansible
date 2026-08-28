@@ -1,0 +1,16 @@
+---
+- name: Increase concurrent recoveries
+  uri:
+    url: "http://{{ es_master }}:9200/_cluster/settings"
+    method: PUT
+    user: "{{ es.username }}"
+    password: "{{ es.password }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      transient:
+        cluster.routing.allocation.node_concurrent_recoveries: "{{ concurrent_recoveries }}"
+    status_code: 200
+
+- debug:
+    msg: "Concurrent recoveries set to {{ concurrent_recoveries }}"
