@@ -1,8 +1,0 @@
----
-- name: Wait cluster green/yellow
-  uri:
-    url: "http://{{ es_master }}:9200/_cluster/health?wait_for_status=yellow&timeout=60s"
-    method: GET
-    user: "{{ es_username }}"
-    password: "{{ es_password }}"
-    force_basic_auth: true
