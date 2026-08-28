@@ -1,0 +1,21 @@
+---
+- name: Restart systemd-networkd
+  become: true
+  systemd:
+    name: systemd-networkd
+    state: restarted
+  when: network_service == "systemd-networkd"
+
+- name: Restart NetworkManager
+  become: true
+  systemd:
+    name: NetworkManager
+    state: restarted
+  when: network_service == "NetworkManager"
+
+- name: Restart networking
+  become: true
+  systemd:
+    name: networking
+    state: restarted
+  when: network_service == "networking"
