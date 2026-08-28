@@ -1,0 +1,17 @@
+---
+- name: Resume shard allocation
+  uri:
+    url: "http://{{ es_master }}:9200/_cluster/settings"
+    method: PUT
+    user: "{{ es.username }}"
+    password: "{{ es.password }}"
+    force_basic_auth: true
+    validate_certs: "{{ es.validate_certs }}"
+    body_format: json
+    body:
+      persistent:
+        cluster.routing.allocation.enable: all
+    status_code: 200
+
+- debug:
+    msg: "Shard allocation resumed."
