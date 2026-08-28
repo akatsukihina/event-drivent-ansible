@@ -1,0 +1,6 @@
+---
+- debug:
+    msg:
+      - "Manual intervention required"
+      - "Index={{ parameters.index }}"
+      - "Shard={{ parameters.shard }}"
