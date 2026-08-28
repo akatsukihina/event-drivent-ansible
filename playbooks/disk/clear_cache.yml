@@ -1,0 +1,9 @@
+---
+- name: Clear Elasticsearch cache
+  uri:
+    url: "http://{{ es_host }}:9200/_cache/clear"
+    method: POST
+    user: "{{ es_username }}"
+    password: "{{ es_password }}"
+    force_basic_auth: true
+    status_code: 200
