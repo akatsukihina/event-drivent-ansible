@@ -1,0 +1,5 @@
+---
+- debug:
+    msg:
+      - "Disk watermark detected"
+      - "{{ parameters }}"
