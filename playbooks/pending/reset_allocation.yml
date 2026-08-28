@@ -1,0 +1,13 @@
+---
+- name: Enable shard allocation
+  uri:
+    url: "http://{{ es_master }}:9200/_cluster/settings"
+    method: PUT
+    user: "{{ es.username }}"
+    password: "{{ es.password }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      persistent:
+        cluster.routing.allocation.enable: "all"
+    status_code: 200
