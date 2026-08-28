@@ -1,0 +1,31 @@
+---
+- name: Primary Reroute
+  uri:
+    url: "http://{{ es_master }}:9200/_cluster/reroute"
+    method: POST
+    user: "{{ es_username }}"
+    password: "{{ es_password }}"
+    force_basic_auth: true
+    return_content: true
+    body_format: json
+    body:
+      commands:
+        - allocate_stale_primary:
+            index: "{{ parameters.index }}"
+            shard: "{{ parameters.shard }}"
+            node: "{{ parameters.node }}"
+            accept_data_loss: false
+
+- import_tasks: wait_initializing.yml
+
+- import_tasks: restart_cluster.yml
+  when: shard_state!="STARTED"
+
+- import_tasks: block_index.yml
+  when: shard_state!="STARTED"
+
+- import_tasks: cache_failure.yml
+  when: shard_state!="STARTED"
+
+- import_tasks: notify.yml
+  when: shard_state!="STARTED"
