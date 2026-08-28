@@ -1,0 +1,12 @@
+---
+- name: Node Remediation
+  hosts: es
+  vars_files:
+    - /u01/ansible/eda/vars/elasticsearch.yml
+  gather_facts: false
+  tasks:
+  - name: Restart network
+    import_tasks: /u01/ansible/eda/playbooks/network/restart_network.yml
+
+  - name: Verify remediation
+    import_tasks: /u01/ansible/eda/playbooks/network/verify.yml

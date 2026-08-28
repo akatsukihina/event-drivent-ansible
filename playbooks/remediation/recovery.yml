@@ -1,0 +1,29 @@
+---
+- name: Node Remediation
+  hosts: es
+  vars_files:
+    - /u01/ansible/eda/vars/elasticsearch.yml
+  gather_facts: false
+  tasks:
+  - name: Retry failed recovery
+    import_tasks: /u01/ansible/eda/playbooks/recovery/retry.yml
+    when: action == "RETRY_RECOVERY"
+
+  - name: Cancel shard relocation
+    import_tasks: /u01/ansible/eda/playbooks/recovery/cancel.yml
+    when: action == "CANCEL_RECOVERY"
+
+  - name: Resume shard allocation
+    import_tasks: /u01/ansible/eda/playbooks/recovery/resume.yml
+    when: action == "RESUME_RECOVERY"
+
+  - name: Increase concurrent recoveries
+    import_tasks: /u01/ansible/eda/playbooks/recovery/increase_concurrent_recoveries.yml
+    when: action == "INCREASE_CONCURRENT_RECOVERIES"
+
+  - name: Reduce recovery bandwidth
+    import_tasks: /u01/ansible/eda/playbooks/recovery/reduce_cluster_load.yml
+    when: action == "REDUCE_CLUSTER_LOAD"
+
+  - name: Verify recovery
+    import_tasks: /u01/ansible/eda/playbooks/recovery/verify.yml

@@ -1,0 +1,33 @@
+---
+- name: Node Remediation
+  hosts: es
+  vars_files:
+    - /u01/ansible/eda/vars/elasticsearch.yml
+  gather_facts: false
+  tasks:
+  - name: Clear pending tasks
+    import_tasks: /u01/ansible/eda/playbooks/pending/clear_tasks.yml
+    when: action == "CLEAR_PENDING"
+
+  - name: Retry failed allocation
+    import_tasks: /u01/ansible/eda/playbooks/pending/retry_failed.yml
+    when: action == "RETRY_FAILED"
+
+  - name: Trigger shard reroute
+    import_tasks: /u01/ansible/eda/playbooks/pending/reroute.yml
+    when: action == "REROUTE"
+
+  - name: Restart master node
+    import_tasks: /u01/ansible/eda/playbooks/pending/restart_master.yml
+    when: action == "RESTART_MASTER"
+
+  - name: Restart cluster manager
+    import_tasks: /u01/ansible/eda/playbooks/pending/restart_cluster_manager.yml
+    when: action == "RESTART_CLUSTER_MANAGER"
+
+  - name: Reset allocation
+    import_tasks: /u01/ansible/eda/playbooks/pending/reset_allocation.yml
+    when: action == "RESET_ALLOCATION"
+
+  - name: Verify remediation
+    import_tasks: /u01/ansible/eda/playbooks/pending/verify.yml

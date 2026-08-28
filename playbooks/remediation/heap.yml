@@ -1,0 +1,30 @@
+---
+- name: Node Remediation
+  hosts: es
+  vars_files:
+    - /u01/ansible/eda/vars/elasticsearch.yml
+  gather_facts: false
+  tasks:
+  - name: Clear all cache
+    import_tasks: /u01/ansible/eda/playbooks/heap/clear_cache.yml
+
+  - name: Clear fielddata cache
+    import_tasks: /u01/ansible/eda/playbooks/heap/clear_fielddata_cache.yml
+
+  - name: Clear query cache
+    import_tasks: /u01/ansible/eda/playbooks/heap/clear_query_cache.yml
+
+  - name: Force JVM Garbage Collection
+    import_tasks: /u01/ansible/eda/playbooks/heap/force_gc.yml
+    when: enable_force_gc | default(false)
+
+  - name: Increase JVM Heap
+    import_tasks: /u01/ansible/eda/playbooks/heap/increase_heap.yml
+    when: increase_heap | default(false)
+
+  - name: Restart Elasticsearch
+    import_tasks: /u01/ansible/eda/playbooks/heap/restart.yml
+    when: restart_required | default(false)
+
+  - name: Verify remediation
+    import_tasks: /u01/ansible/eda/playbooks/heap/verify.yml
