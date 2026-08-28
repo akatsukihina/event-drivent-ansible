@@ -1,0 +1,23 @@
+---
+- name: Get pending tasks
+  uri:
+    url: "http://{{ es_master }}:9200/_cluster/pending_tasks"
+    method: GET
+    user: "{{ es.username }}"
+    password: "{{ es.password }}"
+    force_basic_auth: true
+    return_content: true
+    status_code: 200
+
+  register: pending
+
+- name: Count pending tasks
+  set_fact:
+    pending_count: "{{ pending.json.tasks | length }}"
+
+- name: Verify pending task count
+  assert:
+    that:
+      - pending_count | int <= pending_threshold
+    fail_msg: "Pending tasks vẫn vượt ngưỡng ({{ pending_count }})."
+    success_msg: "Pending tasks đã giảm xuống {{ pending_count }}."
