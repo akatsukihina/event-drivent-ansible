@@ -1,0 +1,17 @@
+---
+- name: Cancel shard relocation
+  uri:
+    url: "http://{{ es_master }}:9200/_cluster/reroute"
+    method: POST
+    user: "{{ es.username }}"
+    password: "{{ es.password }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      commands:
+        - cancel:
+            index: "{{ index_name }}"
+            shard: "{{ shard_id }}"
+            node: "{{ target_node }}"
+            allow_primary: false
+    status_code: 200
