@@ -1,0 +1,16 @@
+---
+- name: Restart Elasticsearch service
+  become: true
+  systemd:
+    name: elasticsearch
+    state: restarted
+    daemon_reload: true
+  register: restart_result
+
+- name: Show restart result
+  debug:
+    var: restart_result
+
+- name: Wait after restart
+  pause:
+    seconds: 15
