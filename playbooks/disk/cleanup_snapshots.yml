@@ -1,0 +1,12 @@
+---
+- name: Delete old snapshot
+  uri:
+    url: "http://{{ es_host }}:9200/_snapshot/{{ snapshot_repository }}/{{ snapshot_name }}"
+    method: DELETE
+    user: "{{ es_username }}"
+    password: "{{ es_password }}"
+    force_basic_auth: true
+    status_code:
+      - 200
+      - 202
+      - 404
