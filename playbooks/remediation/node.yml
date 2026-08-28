@@ -1,0 +1,33 @@
+---
+- name: Node Remediation
+  hosts: es
+  vars_files:
+    - /u01/ansible/eda/vars/elasticsearch.yml
+  gather_facts: false
+  tasks:
+    - name: Restart Elasticsearch/OpenSearch service
+      import_tasks: /u01/ansible/eda/playbooks/node/restart_service.yml
+      when: kafka_event.action == "RESTART_SERVICE"
+
+    - name: Restart Elasticsearch/OpenSearch node
+      import_tasks: /u01/ansible/eda/playbooks/node/restart_node.yml
+      when: kafka_event.action == "RESTART_NODE"
+
+    - name: Wait until service is active
+      import_tasks: /u01/ansible/eda/playbooks/node/wait_service.yml
+      when:
+        - kafka_event.action == "RESTART_SERVICE"
+          or kafka_event.action == "RESTART_NODE"
+
+    - name: Wait until REST API is available
+      import_tasks: /u01/ansible/eda/playbooks/node/wait_api.yml
+      when:
+        - kafka_event.action == "RESTART_SERVICE"
+          or kafka_event.action == "RESTART_NODE"
+
+    - name: Rejoin cluster
+      import_tasks: /u01/ansible/eda/playbooks/node/rejoin_cluster.yml
+      when: kafka_event.action == "REJOIN_CLUSTER"
+
+    - name: Final verification
+      import_tasks: /u01/ansible/eda/playbooks/node/verify.yml
