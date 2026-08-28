@@ -1,0 +1,25 @@
+---
+- name: Get JVM statistics
+  uri:
+    url: "http://{{ es_master }}:9200/_nodes/stats/jvm"
+    method: GET
+    user: "{{ es.username }}"
+    password: "{{ es.password }}"
+    force_basic_auth: true
+    return_content: true
+  register: jvm
+
+- name: Show heap usage
+  debug:
+    msg: >-
+      Heap Usage:
+      {{
+        (jvm.json.nodes.values() | first).jvm.mem.heap_used_percent
+      }}%
+
+- name: Verify heap threshold
+  assert:
+    that:
+      - "(jvm.json.nodes.values() | first).jvm.mem.heap_used_percent < heap_threshold"
+    fail_msg: "Heap vẫn vượt ngưỡng sau remediation."
+    success_msg: "Heap usage đã trở lại bình thường."
