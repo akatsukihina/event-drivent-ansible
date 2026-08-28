@@ -1,0 +1,16 @@
+---
+- name: Get Elasticsearch PID
+  shell: |
+    pgrep -f 'org.elasticsearch.bootstrap.Elasticsearch|opensearch'
+  register: es_pid
+  changed_when: false
+
+- name: Trigger JVM GC
+  shell: |
+    jcmd {{ es_pid.stdout }} GC.run
+  register: gc_result
+  changed_when: true
+  failed_when: false
+
+- debug:
+    var: gc_result.stdout
