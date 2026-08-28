@@ -1,0 +1,16 @@
+---
+- name: Check node in cluster
+  uri:
+    url: "http://{{ es_master }}:9200/_cat/nodes?h=name"
+    return_content: true
+    user: "{{ es_username }}"
+    password: "{{ es_password }}"
+    force_basic_auth: true
+  register: nodes
+
+- name: Verify node joined
+  assert:
+    that:
+      - inventory_hostname in nodes.content
+    fail_msg: "Node chua join lai cluster."
+    success_msg: "Node da join cluster."
