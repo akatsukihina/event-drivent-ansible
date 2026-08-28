@@ -1,0 +1,34 @@
+---
+- name: Elasticsearch Auto Remediation
+  hosts: all
+
+  sources:
+    - ansible.eda.kafka:
+        host: 192.168.1.33
+        port: 9092
+        topic: es-autohealing
+        group_id: es-autohealing-group
+
+  rules:
+
+    - name: Node Operations
+      condition: event.body.issue == "NODE"
+      action:
+        run_playbook:
+          name: /u01/ansible/eda/playbooks/remediation/node.yml
+          extra_vars:
+            kafka_event: "{{ event.body }}"
+            issue: "{{ event.body.issue }}"
+            action: "{{ event.body.action }}"
+            severity: "{{ event.body.severity | default('warning') }}"
+            target_node: "{{ event.body.target_node | default('') }}"
+            parameters: "{{ event.body.parameters | default({}) }}"
+
+    - name: Shard Operations
+      condition: event.body.issue == "SHARD"
+      action:
+        run_playbook:
+          name: /u01/ansible/eda/playbooks/remediation/shard.yml
+          extra_vars:
+            kafka_event: "{{ event.body }}"
+
