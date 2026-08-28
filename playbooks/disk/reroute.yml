@@ -1,0 +1,9 @@
+---
+- name: Trigger shard reroute
+  uri:
+    url: "http://{{ es_host }}:9200/_cluster/reroute?retry_failed=true"
+    method: POST
+    user: "{{ es_username }}"
+    password: "{{ es_password }}"
+    force_basic_auth: true
+    status_code: 200
