@@ -1,0 +1,11 @@
+---
+- name: Delete obsolete index
+  uri:
+    url: "http://{{ es_host }}:9200/{{ index_name }}"
+    method: DELETE
+    user: "{{ es_username }}"
+    password: "{{ es_password }}"
+    force_basic_auth: true
+    status_code:
+      - 200
+      - 404
