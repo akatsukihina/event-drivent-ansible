@@ -1,0 +1,12 @@
+---
+- name: Retry failed shard recoveries
+  uri:
+    url: "http://{{ es_master }}:9200/_cluster/reroute?retry_failed=true"
+    method: POST
+    user: "{{ es.username }}"
+    password: "{{ es.password }}"
+    force_basic_auth: true
+    status_code: 200
+
+- debug:
+    msg: "Retry failed recovery requested."
