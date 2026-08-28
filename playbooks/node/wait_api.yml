@@ -1,0 +1,13 @@
+---
+- name: Wait for Elasticsearch API
+  uri:
+    url: "http://{{ inventory_hostname }}:9200"
+    method: GET
+    status_code: 200
+    user: "{{ es_username }}"
+    password: "{{ es_password }}"
+    force_basic_auth: true
+  register: api_status
+  retries: 30
+  delay: 5
+  until: api_status.status == 200
