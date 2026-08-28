@@ -1,0 +1,12 @@
+---
+- name: Clear query cache
+  uri:
+    url: "http://{{ es_master }}:9200/_cache/clear?query=true"
+    method: POST
+    user: "{{ es.username }}"
+    password: "{{ es.password }}"
+    force_basic_auth: true
+    status_code: 200
+
+- debug:
+    msg: "Query cache cleared."
