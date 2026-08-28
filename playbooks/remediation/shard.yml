@@ -1,0 +1,30 @@
+---
+- name: Elasticsearch Shard Operations
+  hosts: es
+  gather_facts: false
+  vars_files:
+    - /u01/ansible/eda/vars/elasticsearch.yml
+  tasks:
+    - name: Validate shard parameters
+      ansible.builtin.assert:
+        that:
+          - kafka_event.parameters is defined
+          - kafka_event.parameters.index is defined
+          - kafka_event.parameters.shard is defined
+
+    - name: Set target shard parameters
+      ansible.builtin.set_fact:
+        shard_index: "{{ kafka_event.parameters.index }}"
+        shard_id: "{{ kafka_event.parameters.shard | string }}"
+
+    - name: Run shard discovery
+      ansible.builtin.include_tasks: /u01/ansible/eda/playbooks/shard/discovery.yml
+
+    - name: Run shard analysis
+      ansible.builtin.include_tasks: /u01/ansible/eda/playbooks/shard/analyse.yml
+
+    - name: Run remediation
+      ansible.builtin.include_tasks: /u01/ansible/eda/playbooks/shard/execute_action.yml
+
+    - name: Verify remediation
+      ansible.builtin.include_tasks: /u01/ansible/eda/playbooks/shard/verify.yml
