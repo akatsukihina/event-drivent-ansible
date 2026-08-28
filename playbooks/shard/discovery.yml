@@ -1,0 +1,30 @@
+---
+- name: Get Cluster Health
+  uri:
+    url: "http://{{ es_master }}:9200/_cluster/health"
+    method: GET
+    user: "{{ es_username }}"
+    password: "{{ es_password }}"
+    force_basic_auth: true
+    return_content: true
+  register: cluster_health
+
+- name: Get Shard Information
+  uri:
+    url: "http://{{ es_master }}:9200/_cat/shards?format=json"
+    method: GET
+    user: "{{ es_username }}"
+    password: "{{ es_password }}"
+    force_basic_auth: true
+    return_content: true
+  register: shard_info
+
+- name: Get Node Information
+  uri:
+    url: "http://{{ es_master }}:9200/_cat/nodes?format=json"
+    method: GET
+    user: "{{ es_username }}"
+    password: "{{ es_password }}"
+    force_basic_auth: true
+    return_content: true
+  register: node_info
