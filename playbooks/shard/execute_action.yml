@@ -1,0 +1,30 @@
+---
+- name: Execute PRIMARY remediation
+  ansible.builtin.include_tasks: remediation/primary.yml
+  when:
+    - shard_type == "PRIMARY"
+    - shard_state == "UNASSIGNED"
+
+- name: Execute REPLICA remediation
+  ansible.builtin.include_tasks: remediation/replica.yml
+  when:
+    - shard_type == "REPLICA"
+    - shard_state == "UNASSIGNED"
+
+- name: Handle INITIALIZING shard
+  ansible.builtin.include_tasks: remediation/wait_initializing.yml
+  when:
+    - shard_state == "INITIALIZING"
+
+- name: No remediation required
+  ansible.builtin.debug:
+    msg:
+      - "======================================"
+      - "No remediation required"
+      - "Index: {{ shard_index }}"
+      - "Shard: {{ shard_id }}"
+      - "Type: {{ shard_type }}"
+      - "State: {{ shard_state }}"
+      - "======================================"
+  when:
+    - shard_state == "STARTED"
