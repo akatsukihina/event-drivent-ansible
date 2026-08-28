@@ -1,0 +1,31 @@
+---
+- name: Node Remediation
+  hosts: es
+  vars_files:
+    - /u01/ansible/eda/vars/elasticsearch.yml
+  gather_facts: false
+  tasks:
+  - name: Cleanup log files
+    import_tasks: /u01/ansible/eda/playbooks/disk/cleanup_logs.yml
+
+  - name: Cleanup old snapshots
+    import_tasks: /u01/ansible/eda/playbooks/disk/cleanup_snapshots.yml
+    when:
+      - snapshot_repository is defined
+      - snapshot_name is defined
+
+  - name: Delete obsolete indices
+    import_tasks: /u01/ansible/eda/playbooks/disk/cleanup_indices.yml
+    when: index_name is defined
+
+  - name: Clear Elasticsearch cache
+    import_tasks: /u01/ansible/eda/playbooks/disk/clear_cache.yml
+
+  - name: Reset disk watermark
+    import_tasks: /u01/ansible/eda/playbooks/disk/reset_watermark.yml
+
+  - name: Retry shard allocation
+    import_tasks: /u01/ansible/eda/playbooks/disk/reroute.yml
+
+  - name: Verify remediation
+    import_tasks: /u01/ansible/eda/playbooks/disk/verify.yml
