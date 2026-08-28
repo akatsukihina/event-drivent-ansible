@@ -1,0 +1,10 @@
+---
+- copy:
+    dest: "/var/cache/es-remediation/{{ parameters.index }}-{{ parameters.shard }}.json"
+    content: |
+      {
+        "index":"{{ parameters.index }}",
+        "shard":"{{ parameters.shard }}",
+        "node":"{{ parameters.node }}",
+        "time":"{{ ansible_date_time.iso8601 }}"
+      }
