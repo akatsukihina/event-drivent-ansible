@@ -1,0 +1,33 @@
+---
+- name: Elasticsearch Shard Remediation
+  hosts: es
+  vars_files:
+    - /u01/ansible/eda/vars/elasticsearch.yml
+  gather_facts: false
+  tasks:
+  - name: Create snapshot
+    import_tasks: /u01/ansible/eda/playbooks/snapshot/create_snapshot.yml
+    when: action == "CREATE_SNAPSHOT"
+
+  - name: Retry snapshot
+    import_tasks: /u01/ansible/eda/playbooks/snapshot/retry.yml
+    when: action == "RETRY_SNAPSHOT"
+
+  - name: Delete failed snapshot
+    import_tasks: /u01/ansible/eda/playbooks/snapshot/delete_failed.yml
+    when: action == "DELETE_FAILED"
+
+  - name: Delete snapshot
+    import_tasks: /u01/ansible/eda/playbooks/snapshot/delete_snapshot.yml
+    when: action == "DELETE_SNAPSHOT"
+
+  - name: Cleanup repository
+    import_tasks: /u01/ansible/eda/playbooks/snapshot/cleanup_repository.yml
+    when: action == "CLEANUP_REPOSITORY"
+
+  - name: Restore snapshot
+    import_tasks: /u01/ansible/eda/playbooks/snapshot/restore.yml
+    when: action == "RESTORE_SNAPSHOT"
+
+  - name: Verify snapshot
+    import_tasks: /u01/ansible/eda/playbooks/snapshot/verify.yml
