@@ -1,0 +1,22 @@
+---
+- name: Restart Elasticsearch
+  service:
+    name: "{{ es_service }}"
+    state: restarted
+
+- name: Wait node
+  wait_for:
+    port: 9200
+    timeout: 120
+
+- name: If shard still unassigned
+  import_tasks: primary.yml
+  when:
+    - shard_type=="PRIMARY"
+    - shard_state=="UNASSIGNED"
+
+- name: If replica still unassigned
+  import_tasks: replica.yml
+  when:
+    - shard_type=="REPLICA"
+    - shard_state=="UNASSIGNED"
