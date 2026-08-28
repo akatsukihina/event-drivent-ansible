@@ -1,0 +1,14 @@
+---
+- name: Reboot node
+  become: true
+  reboot:
+    reboot_timeout: 900
+    connect_timeout: 30
+    pre_reboot_delay: 5
+    post_reboot_delay: 20
+
+- import_tasks: wait_service.yml
+
+- import_tasks: wait_api.yml
+
+- import_tasks: verify.yml
