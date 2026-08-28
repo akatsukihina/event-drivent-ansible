@@ -1,0 +1,23 @@
+---
+- name: Check disk usage
+  become: true
+  shell: |
+    df -P {{ es_data_path | default('/u01') }} | awk 'NR==2 {print $5}' | tr -d '%'
+  register: disk_usage
+  changed_when: false
+
+- name: Verify disk threshold
+  assert:
+    that:
+      - disk_usage.stdout | int < disk_threshold | default(90)
+    fail_msg: "Disk usage vẫn vượt ngưỡng."
+    success_msg: "Disk usage đã về mức an toàn."
+
+- name: Verify Elasticsearch API
+  uri:
+    url: "http://{{ es_host }}:9200"
+    method: GET
+    user: "{{ es_username }}"
+    password: "{{ es_password }}"
+    force_basic_auth: true
+    status_code: 200
