@@ -1,0 +1,121 @@
+---
+- name: Find requested shard
+  ansible.builtin.set_fact:
+    target_shards: >-
+      {{
+        shard_info.json
+        | selectattr("index", "equalto", shard_index)
+        | selectattr("shard", "equalto", shard_id | string)
+        | list
+      }}
+
+- name: Validate requested shard
+  ansible.builtin.fail:
+    msg: >-
+      Shard not found:
+      index={{ shard_index }},
+      shard={{ shard_id }}
+  when: target_shards | length == 0
+
+- name: Display requested shard records
+  ansible.builtin.debug:
+    msg: "{{ target_shards }}"
+
+- name: Find primary shard
+  ansible.builtin.set_fact:
+    primary_shard: >-
+      {{
+        target_shards
+        | selectattr("prirep", "equalto", "p")
+        | first
+        | default({})
+      }}
+
+- name: Find replica shards
+  ansible.builtin.set_fact:
+    replica_shards: >-
+      {{
+        target_shards
+        | selectattr("prirep", "equalto", "r")
+        | list
+      }}
+
+- name: Select problematic shard
+  ansible.builtin.set_fact:
+    target_shard: >-
+      {{
+        (
+          target_shards
+          | selectattr("state", "equalto", "UNASSIGNED")
+          | first
+        )
+        | default(
+            (
+              target_shards
+              | first
+            )
+          )
+      }}
+
+- name: Determine shard type
+  ansible.builtin.set_fact:
+    shard_type: >-
+      {{
+        'PRIMARY'
+        if target_shard.prirep == 'p'
+        else 'REPLICA'
+      }}
+
+- name: Determine shard state
+  ansible.builtin.set_fact:
+    shard_state: "{{ target_shard.state }}"
+
+# ==========================================================
+# LƯU TRẠNG THÁI BAN ĐẦU
+# Không bị thay đổi bởi wait_initializing.yml
+# ==========================================================
+
+- name: Save initial shard state
+  ansible.builtin.set_fact:
+    initial_shard_state: "{{ shard_state }}"
+
+- name: Determine shard node
+  ansible.builtin.set_fact:
+    shard_node: "{{ target_shard.node | default('') }}"
+
+- name: Determine node count
+  ansible.builtin.set_fact:
+    node_count: "{{ node_info.json | length }}"
+
+# ==========================================================
+# CẬP NHẬT PARAMETERS CHO REMEDIATION
+# ==========================================================
+
+- name: Update remediation parameters
+  ansible.builtin.set_fact:
+    parameters: >-
+      {{
+        parameters | default({}) | combine({
+          'index': shard_index,
+          'shard': shard_id | string,
+          'node': shard_node,
+          'type': shard_type,
+          'state': initial_shard_state
+        })
+      }}
+
+- name: Display shard analysis
+  ansible.builtin.debug:
+    msg:
+      - "======================================"
+      - "Shard Analysis"
+      - "======================================"
+      - "Index            : {{ shard_index }}"
+      - "Shard            : {{ shard_id }}"
+      - "Type             : {{ shard_type }}"
+      - "State            : {{ shard_state }}"
+      - "Initial State    : {{ initial_shard_state }}"
+      - "Node             : {{ shard_node }}"
+      - "Node Count       : {{ node_count }}"
+      - "Parameters       : {{ parameters }}"
+      - "======================================"
