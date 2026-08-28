@@ -1,0 +1,15 @@
+---
+- name: Retry failed allocations
+  uri:
+    url: "http://{{ es_master }}:9200/_cluster/reroute"
+    method: POST
+    user: "{{ es.username }}"
+    password: "{{ es.password }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      retry_failed: true
+    status_code: 200
+
+- debug:
+    msg: "Retry failed shard allocation completed."
