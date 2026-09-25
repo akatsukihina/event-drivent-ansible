@@ -1,0 +1,100 @@
+---
+- name: Analyse Elasticsearch cluster connection
+  hosts: "{{ target_host | default('es') }}"
+  become: true
+  gather_facts: true
+
+  vars:
+    es_http_port: "{{ es_http_port | default(9200) }}"
+    es_transport_port: "{{ es_transport_port | default(9300) }}"
+
+    # Các node Elasticsearch trong cluster
+    cluster_nodes:
+      - 192.168.10.2
+      - 192.168.10.3
+      - 192.168.10.4
+
+  tasks:
+
+    - name: Check Elasticsearch service
+      ansible.builtin.systemd:
+        name: elasticsearch
+      register: es_service
+      failed_when: false
+      changed_when: false
+
+    - name: Check Elasticsearch HTTP port
+      ansible.builtin.wait_for:
+        host: "{{ ansible_host | default(inventory_hostname) }}"
+        port: "{{ es_http_port }}"
+        timeout: 5
+        state: started
+      register: es_http_check
+      failed_when: false
+      changed_when: false
+
+    - name: Check Elasticsearch transport port
+      ansible.builtin.wait_for:
+        host: "{{ ansible_host | default(inventory_hostname) }}"
+        port: "{{ es_transport_port }}"
+        timeout: 5
+        state: started
+      register: es_transport_check
+      failed_when: false
+      changed_when: false
+
+    - name: Check connectivity to other cluster nodes
+      ansible.builtin.shell: |
+        nc -zvw3 {{ item }} {{ es_transport_port }}
+      loop: "{{ cluster_nodes }}"
+      register: cluster_connectivity
+      changed_when: false
+      failed_when: false
+
+    - name: Check Elasticsearch API
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host | default(inventory_hostname) }}:{{ es_http_port }}/_cluster/health"
+        method: GET
+        timeout: 5
+        return_content: true
+        status_code: 200
+      register: es_cluster_health
+      failed_when: false
+      changed_when: false
+
+    - name: Determine cluster connection problem
+      ansible.builtin.set_fact:
+        cluster_connection_problem: >-
+          {{
+            es_service.status.ActiveState != 'active'
+            or es_http_check.failed
+            or es_transport_check.failed
+          }}
+
+    - name: Determine network problem
+      ansible.builtin.set_fact:
+        cluster_network_problem: >-
+          {{
+            cluster_connectivity.results
+            | selectattr('rc', 'ne', 0)
+            | list
+            | length > 0
+          }}
+
+    - name: Determine Elasticsearch service problem
+      ansible.builtin.set_fact:
+        cluster_service_problem: >-
+          {{
+            es_service.status.ActiveState != 'active'
+          }}
+
+    - name: Print analysis result
+      ansible.builtin.debug:
+        msg:
+          target_host: "{{ inventory_hostname }}"
+          service_state: "{{ es_service.status.ActiveState | default('unknown') }}"
+          http_9200_ok: "{{ not es_http_check.failed }}"
+          transport_9300_ok: "{{ not es_transport_check.failed }}"
+          cluster_api_ok: "{{ not es_cluster_health.failed }}"
+          network_problem: "{{ cluster_network_problem }}"
+          service_problem: "{{ cluster_service_problem }}"
