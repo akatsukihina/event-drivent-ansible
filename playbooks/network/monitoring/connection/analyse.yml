@@ -1,0 +1,66 @@
+---
+- name: Analyse monitoring connection
+  hosts: "{{ target_host | default('es') }}"
+  become: true
+  gather_facts: true
+
+  vars:
+    node_exporter_port: 9100
+
+    monitoring_host: "{{ monitoring_host | default('10.100.206.93') }}"
+    monitoring_port: "{{ monitoring_port | default(9095) }}"
+
+  tasks:
+
+    - name: Check node_exporter service
+      ansible.builtin.systemd:
+        name: node_exporter
+      register: node_exporter_service
+      failed_when: false
+      changed_when: false
+
+    - name: Check node_exporter port
+      ansible.builtin.wait_for:
+        host: "{{ ansible_host | default(inventory_hostname) }}"
+        port: "{{ node_exporter_port }}"
+        timeout: 5
+        state: started
+      register: node_exporter_port_check
+      failed_when: false
+      changed_when: false
+
+    - name: Check connectivity to monitoring server
+      ansible.builtin.shell: |
+        nc -zvw5 {{ monitoring_host }} {{ monitoring_port }}
+      register: monitoring_connectivity
+      changed_when: false
+      failed_when: false
+
+    - name: Determine node_exporter problem
+      ansible.builtin.set_fact:
+        monitoring_exporter_problem: >-
+          {{
+            node_exporter_service.status.ActiveState != 'active'
+            or node_exporter_port_check.failed
+          }}
+
+    - name: Determine monitoring network problem
+      ansible.builtin.set_fact:
+        monitoring_network_problem: >-
+          {{
+            monitoring_connectivity.rc != 0
+          }}
+
+    - name: Print monitoring analysis
+      ansible.builtin.debug:
+        msg:
+          node: "{{ inventory_hostname }}"
+          node_exporter:
+            service: "{{ node_exporter_service.status.ActiveState | default('unknown') }}"
+            port_9100: "{{ not node_exporter_port_check.failed }}"
+          monitoring:
+            host: "{{ monitoring_host }}"
+            port: "{{ monitoring_port }}"
+            reachable: "{{ monitoring_connectivity.rc == 0 }}"
+          exporter_problem: "{{ monitoring_exporter_problem }}"
+          network_problem: "{{ monitoring_network_problem }}"
