@@ -1,1 +1,12 @@
+---
+- name: Verify Elasticsearch cluster connection
+  ansible.builtin.import_tasks:
+    file: /u01/ansible/eda/playbooks/network/cluster/connection/verify.yml
 
+- name: Verify monitoring connection
+  ansible.builtin.import_tasks:
+    file: /u01/ansible/eda/playbooks/network/monitoring/connection/verify.yml
+
+- name: Network remediation verification completed
+  ansible.builtin.debug:
+    msg: "Network verification completed successfully."
