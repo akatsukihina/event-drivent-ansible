@@ -1,0 +1,49 @@
+---
+- name: Verify monitoring connection
+  hosts: "{{ target_host | default('es') }}"
+  become: true
+  gather_facts: false
+
+  vars:
+    node_exporter_port: 9100
+
+  tasks:
+
+    - name: Check node_exporter service
+      ansible.builtin.systemd:
+        name: node_exporter
+      register: node_exporter_service
+      changed_when: false
+
+    - name: Verify node_exporter port
+      ansible.builtin.wait_for:
+        host: "{{ ansible_host | default(inventory_hostname) }}"
+        port: "{{ node_exporter_port }}"
+        state: started
+        timeout: 30
+
+    - name: Verify node_exporter metrics
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host | default(inventory_hostname) }}:9100/metrics"
+        method: GET
+        timeout: 10
+        status_code: 200
+      register: metrics_check
+      failed_when: false
+
+    - name: Show monitoring verification
+      ansible.builtin.debug:
+        msg:
+          node: "{{ inventory_hostname }}"
+          node_exporter_service: "{{ node_exporter_service.status.ActiveState }}"
+          port_9100: "{{ not metrics_check.failed }}"
+          metrics_available: "{{ not metrics_check.failed }}"
+
+    - name: Fail when monitoring connection is not recovered
+      ansible.builtin.fail:
+        msg: >-
+          Monitoring connection has NOT recovered on
+          {{ inventory_hostname }}.
+      when:
+        - node_exporter_service.status.ActiveState != "active"
+          or metrics_check.failed | default(true)
