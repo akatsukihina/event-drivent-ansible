@@ -3,7 +3,7 @@
   become: true
 
   systemd:
-    name: "{{ es_service_name }}"
+    name: "{{ es_service }}"
     state: restarted
 
 - pause:
