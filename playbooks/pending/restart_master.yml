@@ -3,7 +3,7 @@
   become: true
 
   systemd:
-    name: "{{ es_service_name }}"
+    name: "{{ es_service }}"
     state: restarted
     daemon_reload: true
 
@@ -11,14 +11,11 @@
   uri:
     url: "http://{{ es_master }}:9200"
     method: GET
-    user: "{{ es.username }}"
-    password: "{{ es.password }}"
+    user: "{{ es_username }}"
+    password: "{{ es_password }}"
     force_basic_auth: true
     status_code: 200
-
   register: api
-
   retries: 30
   delay: 10
-
   until: api.status == 200
