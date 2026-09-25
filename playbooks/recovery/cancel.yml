@@ -1,17 +1,17 @@
 ---
-- name: Cancel shard relocation
+- name: Resume shard allocation
   uri:
-    url: "http://{{ es_master }}:9200/_cluster/reroute"
-    method: POST
-    user: "{{ es.username }}"
-    password: "{{ es.password }}"
+    url: "http://{{ es_master }}:9200/_cluster/settings"
+    method: PUT
+    user: "{{ es_username }}"
+    password: "{{ es_password }}"
     force_basic_auth: true
+    validate_certs: "{{ es.validate_certs }}"
     body_format: json
     body:
-      commands:
-        - cancel:
-            index: "{{ index_name }}"
-            shard: "{{ shard_id }}"
-            node: "{{ target_node }}"
-            allow_primary: false
+      persistent:
+        cluster.routing.allocation.enable: all
     status_code: 200
+
+- debug:
+    msg: "Shard allocation resumed."
