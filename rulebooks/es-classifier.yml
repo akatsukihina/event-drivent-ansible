@@ -1,16 +1,13 @@
 ---
 - name: Elasticsearch Auto Remediation
   hosts: all
-
   sources:
     - ansible.eda.kafka:
-        host: 192.168.1.33
-        port: 9092
-        topic: es-autohealing
-        group_id: es-autohealing-group
-
+        host: {{ kafka_host }}
+        port: {{ kafka_port }}
+        topic: {{ kafka_topic }}
+        group_id: {{ kafka_topic_group_id | default('es-autohealing') }}
   rules:
-
     - name: Node Operations
       condition: event.body.issue == "NODE"
       action:
@@ -32,3 +29,69 @@
           extra_vars:
             kafka_event: "{{ event.body }}"
 
+    - name: Pending Tasks Remediation
+      condition: >
+        event.body.issue == "PENDING"
+      action:
+        run_playbook:
+          name: /u01/ansible/eda/playbooks/remediation/pending.yml
+          extra_vars:
+            kafka_event: "{{ event.body }}"
+            issue: "{{ event.body.issue }}"
+            action: "{{ event.body.action }}"
+            severity: "{{ event.body.severity | default('warning') }}"
+            target_node: "{{ event.body.target_node | default('') }}"
+            parameters: "{{ event.body.parameters | default({}) }}"
+
+    - name: Cluster Connection Remediation
+      condition: >
+        event.body.issue == "NETWORK" and
+        event.body.connection_type == "CLUSTER"
+      action:
+        run_playbook:
+          name: /u01/ansible/eda/playbooks/network/cluster/connection/analyse.yml
+          extra_vars:
+            kafka_event: "{{ event.body }}"
+            issue: "{{ event.body.issue }}"
+            connection_type: "{{ event.body.connection_type }}"
+            action: "{{ event.body.action }}"
+            severity: "{{ event.body.severity | default('warning') }}"
+            target_node: "{{ event.body.target_node | default('') }}"
+            parameters: "{{ event.body.parameters | default({}) }}"
+
+    - name: Monitoring Connection Remediation
+      condition: >
+        event.body.issue == "NETWORK" and
+        event.body.connection_type == "MONITORING"
+      action:
+        run_playbook:
+          name: /u01/ansible/eda/playbooks/network/monitoring/connection/analyse.yml
+          extra_vars:
+            kafka_event: "{{ event.body }}"
+            issue: "{{ event.body.issue }}"
+            connection_type: "{{ event.body.connection_type }}"
+            action: "{{ event.body.action }}"
+            severity: "{{ event.body.severity | default('warning') }}"
+            target_node: "{{ event.body.target_node | default('') }}"
+            parameters: "{{ event.body.parameters | default({}) }}"
+
+    - name: Snapshot Remediation
+      condition: >
+        event.body.issue == "SNAPSHOT"
+      action:
+        run_playbook:
+          name: /u01/ansible/eda/playbooks/remediation/snapshot.yml
+          extra_vars:
+            kafka_event: "{{ event.body }}"
+            issue: "{{ event.body.issue }}"
+            action: "{{ event.body.action }}"
+            severity: "{{ event.body.severity | default('warning') }}"
+            target_node: "{{ event.body.target_node | default('') }}"
+            parameters: "{{ event.body.parameters | default({}) }}"
+
+    - name: Ignore Unknown Issue
+      condition: >
+        event.body.issue == "UNKNOWN"
+      action:
+        debug:
+          msg: "Unsupported issue received: {{ event.body }}"
