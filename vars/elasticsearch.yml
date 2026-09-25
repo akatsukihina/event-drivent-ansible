@@ -1,16 +1,22 @@
----
+#Elasticsearch configuration
 es_scheme: http
-es_host: 192.168.1.33
+es_host: 192.168.10.2
 es_port: 9200
 es_service_name: elasticsearch
 new_heap_size: 8g
 es_jvm_options: /u01/elasticsearch/config/jvm.options
 
-es_url: http://192.168.1.33:9200
-es_master: 192.168.1.33
+es_url: http://192.168.10.2:9200
+es_master: 192.168.10.2
 es_user: elastic
 es_username: elastic
-es_password: elastic
+es_password: s3cr3tTtvas
 
 es_validate_certs: false
 es_timeout: 30
+
+#Kafka configuration
+kafka_host: 192.168.10.2
+kafka_port: 9092
+kafka_topic: es-autohealing
+kafka_topic_group_id: es-autohealing-group
