@@ -1,0 +1,48 @@
+---
+- name: Execute monitoring connection remediation
+  hosts: "{{ target_host | default('es') }}"
+  become: true
+  gather_facts: false
+
+  tasks:
+
+    - name: Restart node_exporter when service is down
+      ansible.builtin.systemd:
+        name: node_exporter
+        state: restarted
+      when:
+        - monitoring_exporter_problem | default(false) | bool
+
+    - name: Wait for node_exporter
+      ansible.builtin.wait_for:
+        host: "{{ ansible_host | default(inventory_hostname) }}"
+        port: 9100
+        state: started
+        timeout: 30
+      when:
+        - monitoring_exporter_problem | default(false) | bool
+
+    - name: Restart network when monitoring network is unavailable
+      ansible.builtin.include_tasks:
+        file: "/u01/ansible/eda/playbooks/network/restart_network.yml"
+      when:
+        - monitoring_network_problem | default(false) | bool
+        - not (monitoring_exporter_problem | default(false) | bool)
+
+    - name: Wait after network remediation
+      ansible.builtin.pause:
+        seconds: 10
+      when:
+        - monitoring_network_problem | default(false) | bool
+
+    - name: Show monitoring remediation result
+      ansible.builtin.debug:
+        msg:
+          node_exporter_restart: >-
+            {{
+              monitoring_exporter_problem | default(false) | bool
+            }}
+          network_restart: >-
+            {{
+              monitoring_network_problem | default(false) | bool
+            }}
