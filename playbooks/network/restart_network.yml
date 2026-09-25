@@ -1,21 +1,116 @@
 ---
-- name: Restart systemd-networkd
+- name: Restart network service
+  hosts: "{{ target_host | default('all') }}"
   become: true
-  systemd:
-    name: systemd-networkd
-    state: restarted
-  when: network_service == "systemd-networkd"
+  gather_facts: true
 
-- name: Restart NetworkManager
-  become: true
-  systemd:
-    name: NetworkManager
-    state: restarted
-  when: network_service == "NetworkManager"
+  vars:
+    network_service: NetworkManager
+    network_wait_timeout: 60
+    network_wait_delay: 5
 
-- name: Restart networking
-  become: true
-  systemd:
-    name: networking
-    state: restarted
-  when: network_service == "networking"
+  tasks:
+
+    - name: Get default gateway
+      ansible.builtin.command:
+        cmd: ip route show default
+      register: default_route_before
+      changed_when: false
+      failed_when: false
+
+    - name: Get network interfaces
+      ansible.builtin.command:
+        cmd: ip -br addr
+      register: interfaces_before
+      changed_when: false
+      failed_when: false
+
+    - name: Get NetworkManager status
+      ansible.builtin.systemd:
+        name: "{{ network_service }}"
+      register: network_service_before
+      changed_when: false
+      failed_when: false
+
+    - name: Show network state before restart
+      ansible.builtin.debug:
+        msg:
+          host: "{{ inventory_hostname }}"
+          network_service: >-
+            {{ network_service_before.status.ActiveState | default('unknown') }}
+          default_route: "{{ default_route_before.stdout | default('none') }}"
+          interfaces: "{{ interfaces_before.stdout | default('none') }}"
+
+    - name: Restart NetworkManager
+      ansible.builtin.systemd:
+        name: "{{ network_service }}"
+        state: restarted
+      register: network_restart
+
+    - name: Show restart result
+      ansible.builtin.debug:
+        msg:
+          host: "{{ inventory_hostname }}"
+          network_restarted: "{{ network_restart.changed }}"
+
+    - name: Wait for default route
+      ansible.builtin.shell: |
+        ip route show default
+      register: default_route_after
+      retries: "{{ (network_wait_timeout / network_wait_delay) | int }}"
+      delay: "{{ network_wait_delay }}"
+      until: default_route_after.stdout | trim | length > 0
+      changed_when: false
+      failed_when: false
+
+    - name: Wait for network interface
+      ansible.builtin.command:
+        cmd: ip -br addr
+      register: interfaces_after
+      retries: 10
+      delay: 3
+      until:
+        - interfaces_after.rc == 0
+      changed_when: false
+      failed_when: false
+
+    - name: Check NetworkManager after restart
+      ansible.builtin.systemd:
+        name: "{{ network_service }}"
+      register: network_service_after
+      changed_when: false
+      failed_when: false
+
+    - name: Verify NetworkManager is active
+      ansible.builtin.assert:
+        that:
+          - network_service_after.status.ActiveState == "active"
+        fail_msg: >-
+          NetworkManager is NOT active on {{ inventory_hostname }}.
+          Current state:
+          {{ network_service_after.status.ActiveState | default('unknown') }}
+        success_msg: >-
+          NetworkManager is active on {{ inventory_hostname }}
+
+    - name: Get final default route
+      ansible.builtin.command:
+        cmd: ip route show default
+      register: final_default_route
+      changed_when: false
+      failed_when: false
+
+    - name: Get final interfaces
+      ansible.builtin.command:
+        cmd: ip -br addr
+      register: final_interfaces
+      changed_when: false
+      failed_when: false
+
+    - name: Display final network state
+      ansible.builtin.debug:
+        msg:
+          host: "{{ inventory_hostname }}"
+          network_service: >-
+            {{ network_service_after.status.ActiveState | default('unknown') }}
+          default_route: "{{ final_default_route.stdout | default('none') }}"
+          interfaces: "{{ final_interfaces.stdout | default('none') }}"
